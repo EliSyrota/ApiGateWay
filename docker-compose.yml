@@ -1,0 +1,71 @@
+version: "3.7"
+
+services:
+  
+  api-gateway:
+    image: simcorp/api-gateway:${TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on: 
+      - consul
+
+  platform-api:
+    image: simcorp/api-gateway:${TAG:-latest}
+    command: platform-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: 'Development'
+      PlatformApi__ServiceDiscovery__InstanceHost: localhost
+      PlatformApi__ServiceDiscovery__InstancePort: 5002
+      PlatformApi__Auth__AuthAddress: http://identity-api:5000
+      Consul__Address: http://consul:8500
+    ports:
+      - "5002:5000"
+    depends_on: 
+      - api-gateway
+  
+  grpc-api:
+    image: simcorp/api-gateway:${TAG:-latest}
+    command: grpc-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: 'Development'
+      GrpcApi__ServiceDiscovery__InstanceHost: localhost
+      GrpcApi__ServiceDiscovery__InstancePort: 5006
+      GrpcApi__Auth__AuthAddress: http://identity-api:5000
+      Consul__Address: http://consul:8500
+    ports:
+      - "5006:5000"
+    depends_on: 
+      - api-gateway
+
+  identity-api:
+    image: simcorp/api-gateway:${TAG:-latest}
+    command: identity-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: 'Development'
+      Identity__ServiceDiscovery__InstanceHost: localhost
+      Identity__ServiceDiscovery__InstancePort: 5005
+      Consul__Address: http://consul:8500
+    ports:
+      - "5005:5000"
+    depends_on: 
+      - api-gateway
+  
+  signalr-api:
+    image: simcorp/api-gateway:${TAG:-latest}
+    command: signalr-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: 'Development'
+      SignalRApi__ServiceDiscovery__InstanceHost: localhost
+      SignalRApi__ServiceDiscovery__InstancePort: 5008
+      SignalRApi__Auth__AuthAddress: http://identity-api:5000
+      Consul__Address: http://consul:8500
+    ports:
+      - "5008:5000"
+    depends_on: 
+      - api-gateway
+
+  consul:
+    image: consul
+    ports: 
+      - "8500:8500"
